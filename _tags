@@ -1,0 +1,34 @@
+# OASIS_START
+# DO NOT EDIT (digest: 7faf37bf203d7892ac3986e3ebb0ebc4)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Executable equiv
+"src/main.byte": pkg_comparelib
+"src/main.byte": pkg_comparelib.syntax
+"src/main.byte": pkg_core
+"src/main.byte": pkg_hashcons
+"src/main.byte": pkg_sexplib
+"src/main.byte": pkg_sexplib.syntax
+"src/main.byte": pkg_tdk
+"src/main.byte": pkg_threads
+<src/*.ml{,i,y}>: pkg_comparelib
+<src/*.ml{,i,y}>: pkg_comparelib.syntax
+<src/*.ml{,i,y}>: pkg_core
+<src/*.ml{,i,y}>: pkg_hashcons
+<src/*.ml{,i,y}>: pkg_sexplib
+<src/*.ml{,i,y}>: pkg_sexplib.syntax
+<src/*.ml{,i,y}>: pkg_tdk
+<src/*.ml{,i,y}>: pkg_threads
+# OASIS_STOP

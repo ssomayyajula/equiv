@@ -1,0 +1,19 @@
+OASISFormat: 0.4
+Name:        equiv
+Version:     0.1
+Synopsis:    Equivalence modulo user specification in NetKAT
+Authors:     Siva Somayyajula
+License:     MIT
+Executable equiv
+  Path:       src
+  BuildTools: ocamlbuild
+  MainIs:     main.ml
+  BuildDepends:
+    core,
+    threads,
+    sexplib,
+    sexplib.syntax,
+    comparelib,
+    comparelib.syntax,
+    hashcons,
+    tdk
