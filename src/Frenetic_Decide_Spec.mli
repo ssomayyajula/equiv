@@ -36,12 +36,15 @@ module rec Spec : sig
 
   val sel_equal : sel -> sel -> bool
   val compare: t -> t -> int
+  val compare_sel : sel -> sel -> int
   val compare_spec: spec -> spec -> int
   val sexp_of_t: t -> Sexplib.Sexp.t
   val t_of_sexp: Sexplib.Sexp.t -> t
   val sexp_of_spec: spec -> Sexplib.Sexp.t
   val spec_of_sexp: Sexplib.Sexp.t -> spec 
-  
+  val sel_of_sexp : Sexplib.Sexp.t -> sel
+  val sexp_of_sel : sel -> Sexplib.Sexp.t
+
   val alpha : FieldSet.t -> t
   val beta : Predicate.t -> t
   val tau : t

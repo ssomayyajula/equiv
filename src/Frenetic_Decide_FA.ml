@@ -17,12 +17,31 @@ module type DFA = sig
   val delta : q -> s -> q
 end
 
+let run (type s) (type x) (module D : DFA with type s = s and type x = x) =
+  Fn.compose D.epsilon (List.fold_left ~init:D.q0 ~f:D.delta)
+
 module type NFA = sig
   include FA
   module StateSet : sig
     include Set.S with type Elt.t = q
   end
   val delta : q -> s -> StateSet.t
+end
+
+module type LazyFiniteSet = sig
+  type elt
+  val fold_until : init:'accum
+                -> f:('accum -> elt -> [ `Continue of 'accum | `Stop of 'accum ])
+                -> 'accum
+end
+
+module type SyntacticDFA = sig 
+  include DFA 
+  
+  (* Antimirov Thm. 3.4: FA of t has at most |t| + 1 states *)
+  val size_bound : int 
+  
+  val alphabet : (module LazyFiniteSet with type elt = s)
 end
 
 let join (type x')
@@ -82,7 +101,7 @@ let nfa_of_dfa (module D : DFA) =
      
    end : NFA)
 
-let dfa_of_nfa (module N : NFA with type x = bool) =
+let dfa_of_nfa (type s) (module N : NFA with type s = s and type x = bool) =
   (module struct
      type q = N.StateSet.t with sexp, compare
 
@@ -100,9 +119,9 @@ let dfa_of_nfa (module N : NFA with type x = bool) =
        StateSetSet.fold (StateSetSet.map qs ~f:(fun q -> N.delta q s)) ~init:N.StateSet.empty ~f:N.StateSet.union
 
      let epsilon = N.StateSet.exists ~f:N.epsilon
-   end : DFA)
+   end : DFA with type s = s and type x = bool)
 
-let complement (module D : DFA with type x = bool) =
+let complement (type s) (module D : DFA with type s = s and type x = bool) =
   (module struct
      type q = D.q with sexp, compare
      
@@ -115,9 +134,13 @@ let complement (module D : DFA with type x = bool) =
      let delta = D.delta
      
      let epsilon = Fn.non D.epsilon
-   end : DFA)
+   end : DFA with type s = s and type x = bool)
 
-let empty (module D : DFA) = failwith ""
+let empty (module D : SyntacticDFA with type x = bool) = (*failwith ""
+   let rng = List.init Fn.id (D.size_bound - 1) in
+   let strs = D.alphabet.fold_until ~init:true ~
+   List.exists (failwith "") (run (module D))*)
+   failwith ""
 
 module Label (S : Set.S) = struct
   let label (type s2) (f : s2 -> S.t) (module D : DFA with type s = S.Elt.t) =
@@ -141,23 +164,54 @@ module Label (S : Set.S) = struct
      end : NFA with type s = s2)
 end
 
-(* Both these definitions use Antimirov's Theorem 4.1 in his seminal paper *)
+let close (type s') (module N : NFA with type s = s' option and type x = bool) =
+  (module struct
+     type q = N.q with sexp, compare
+     
+     module StateSet = N.StateSet
+     
+     type s = s'
+     
+     type x = N.x
+     
+     module StateSetSet = Set.Make (struct
+       type t = StateSet.t with sexp, compare
+     end)
+     
+     let e_closure q =
+       let rec helper set =
+         let diff =
+           StateSet.diff
+             (StateSetSet.fold
+                (StateSetSet.map set ~f:(Fn.flip N.delta None)) ~init:StateSet.empty ~f:StateSet.union) set in
+         if StateSet.is_empty diff then
+           set
+         else helper (StateSet.union set diff) in
+       helper (StateSet.singleton q)
+     
+     let q0 = N.q0
+     
+     let delta q s = StateSetSet.fold (StateSetSet.map (e_closure q) ~f:(Fn.flip N.delta (Some s))) ~init:StateSet.empty ~f:StateSet.union
+     
+     let epsilon q = StateSet.exists (e_closure q) ~f:N.epsilon
+   end : NFA with type s = s' and type x = bool)
 
-let from_netkat_deriv (module D : DerivTerm) t  = failwith ""
-(*  let open D in
+(* Both these definitions use Antimirov's Theorem 4.1 in his seminal paper *)
+let from_netkat_deriv (module D : DerivTerm) st =
+  let open D in
   (module struct
      type q = TermSet.t with sexp, compare
 
-     type s  = point
+     type s = point
 
-     type x = bool
+     type x = (*point ->*) bool
 
-     let q0 = t
+     let q0 = st
 
-     let delta q s = DMatrix.run (get_d (make_term (TermSet.singleton q))) s
+     let delta q = DMatrix.run (get_d (make_term q))
 
-     let epsilon q = EMatrix.run (get_e (make_term (TermSet.singleton q)))
-   end : DFA)*)
+     let epsilon q = failwith "not yet implemented" (*EMatrix.run (get_e (make_term q))*)
+   end : DFA with type x = bool (*with type q = TermSet.t and type s = point and type x = point -> bool*))
 
 let from_spec_deriv (module S : SpecDeriv) sp =
   let open S in
@@ -170,8 +224,8 @@ let from_spec_deriv (module S : SpecDeriv) sp =
 
      let q0 = sp
      
-     let delta q s = D.run (get_d (make q)) s
+     let delta q = D.run (get_d (make q))
      
      let epsilon q = E.run (get_e (make q))
-   end : DFA)
+   end : DFA with type x = bool)
 

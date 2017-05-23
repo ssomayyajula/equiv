@@ -26,9 +26,29 @@ module type DFA = sig
   val delta : q -> s -> q
 end
 
-val complement : (module DFA with type x = bool) -> (module DFA)
+val run : (module DFA with type s = 's and type x = 'x) -> 's list -> 'x
 
-val empty : (module DFA) -> bool
+(* The alphabets of automata are finite but large--so
+   let's not store them in memory, but iterate over them as necessary *)
+module type LazyFiniteSet = sig
+  type elt
+  val fold_until : init:'accum
+                -> f:('accum -> elt -> [ `Continue of 'accum | `Stop of 'accum ])
+                -> 'accum
+end
+
+module type SyntacticDFA = sig
+  include DFA
+  
+  (* Antimirov Thm. 3.4: FA of t has at most |t| + 1 states *)
+  val size_bound : int
+  
+  val alphabet : (module LazyFiniteSet with type elt = s)
+end
+
+val complement : (module DFA with type s = 's and type x = bool) -> (module DFA with type s = 's and type x = bool)
+
+val empty : (module SyntacticDFA with type x = bool) -> bool
 
 val join : ('x -> 'x -> 'x) 
         -> (module DFA with type x = 'x)
@@ -51,15 +71,17 @@ module type NFA = sig
   val delta : q -> s -> StateSet.t
 end
 
+val close : (module NFA with type s = 's option and type x = bool) -> (module NFA with type s = 's and type x = bool)
+
 module Label : functor (S : Set.S) -> sig
   val label : ('s2 -> S.t) -> (module DFA with type s = S.Elt.t) -> (module NFA with type s = 's2)
 end
 
 val nfa_of_dfa : (module DFA) -> (module NFA)
 
-val dfa_of_nfa : (module NFA with type x = bool) -> (module DFA)
+val dfa_of_nfa : (module NFA with type s = 's and type x = bool) -> (module DFA with type s = 's and type x = bool)
 
-val from_netkat_deriv : (module DerivTerm) -> Term.t -> (module DFA)
+val from_netkat_deriv : (module DerivTerm) -> TermSet.t -> (module DFA with type x = bool)
 
-val from_spec_deriv : (module SpecDeriv) -> Spec.t -> (module DFA)
+val from_spec_deriv : (module SpecDeriv) -> Spec.t -> (module DFA with type x = bool)
 

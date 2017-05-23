@@ -51,12 +51,14 @@ module rec SpecBase : sig
 
   val sel_equal : sel -> sel -> bool
   val compare: t -> t -> int
+  val compare_sel : sel -> sel -> int
   val compare_spec: spec -> spec -> int
   val sexp_of_t: t -> Sexplib.Sexp.t
   val t_of_sexp: Sexplib.Sexp.t -> t
   val sexp_of_spec: spec -> Sexplib.Sexp.t
   val spec_of_sexp: Sexplib.Sexp.t -> spec
-
+  val sel_of_sexp : Sexplib.Sexp.t -> sel
+  val sexp_of_sel : sel -> Sexplib.Sexp.t
 end = struct
   type sel =
     | Alpha of FieldSet.t
@@ -104,6 +106,8 @@ end = struct
     let b_comp = (comparable_of_spec b) in
     compare_int_spec a_comp b_comp
 
+  let compare_sel s1 s2 = compare_spec (Sel s1) (Sel s2)
+
   let sel_equal s1 s2 =
     match s1, s2 with
     | Alpha f1, Alpha f2 -> FieldSet.equal f1 f2
@@ -118,6 +122,8 @@ end = struct
   let sexp_of_spec t = failwith "TODO"
   let spec_of_sexp s = failwith "TODO"
 
+  let sel_of_sexp s = match spec_of_sexp s with Sel sel -> sel | _ -> failwith "sel_of_sexp error"
+  let sexp_of_sel s = sexp_of_spec (Sel s)
 end
 and SpecSetBase : sig
   include Set.S with type Elt.t = SpecBase.t
