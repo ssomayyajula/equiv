@@ -5,24 +5,51 @@ open Frenetic_Decide_Ast
 open Frenetic_Decide_Deriv
 open Frenetic_Decide_FA
 
-module SelSet = Set.Make (struct
-  type t = Spec.sel option with sexp, compare
+(*
+f: Sel * Pk -> PacketSet.t option
+(tau, p) -> None
+(a f, p) -> Some (all p' s.t. p[f]=p'[f])
+
+f^{-1}: PacketSet.t option -> SelPkSet.t
+None -> {(tau, p) | p : packet}
+Some set -> (a f, all ) where f are all common fields
+*)
+
+module SelPkSet = Set.Make (struct
+  type t = packet * Spec.sel with sexp, compare
 end)
 
-module L = Label(SelSet)
+module L = Label(SelPkSet)
+
+let inv : PacketSet.t option -> SelPkSet.t = failwith ""
 
 let check_satisfaction s t1 t2 =
-  let aut_s     = from_spec_deriv   (module NaiveDeriv) s  in
-  let aut_t1    = from_netkat_deriv (module BDDDeriv)   t1 in
-  let aut_t2    = from_netkat_deriv (module BDDDeriv)   t2 in
-  let prod_t1_s = product aut_t1 aut_s                     in
-  let prod_t2_s = product aut_t2 aut_s                     in
-  let f : packet -> SelSet.t = failwith ""                          in
-  let ex_1      = L.label f prod_t1_s          in
-  let ex_2      = L.label f prod_t2_s          in
-  (*empty (intersect (dfa_of_nfa ex_1) (complement (dfa_of_nfa ex_2)))
-*)
+  (* Build the automata for s, t1, and t2 *)
+  let aut_s     = from_spec_deriv (module NaiveDeriv) s in
+  let aut_t1    = dfa_of_nfa (from_netkat_deriv (module BDDDeriv) t1) in
+  let aut_t2    = dfa_of_nfa (from_netkat_deriv (module BDDDeriv) t2) in
+  
+  (* Take the product of the NetKAT terms with the spec *)
+  let prod_t1_s = product aut_t1 aut_s  in
+  let prod_t2_s = product aut_t2 aut_s  in
+
+  (* Convert the (pk, sel) labels to sets of packets or epsilon transitions (semantically) *)
+  let lbl_e1    = L.label inv prod_t1_s in
+  let lbl_e2    = L.label inv prod_t2_s in
+
+  (* Get rid of epsilon moves *)
+  let lbl_1 = close lbl_e1 in
+  let lbl_2 = close lbl_e2 in
+
+  (* Get rid of f *)
+  (*
+  let sim = intersect (dfa_of_nfa ex_1) (complement (dfa_of_nfa ex_2)) in
+  let module A = (val sim : DFA with type s = PacketSet.t option and type x = bool)
+  let a = (module struct
+    type x = 
+  end : SyntacticDFA with type x = bool) in*)
   failwith ""
+
 type ab = A | B
 
 let d =

@@ -51,17 +51,17 @@ val complement : (module DFA with type s = 's and type x = bool) -> (module DFA 
 val empty : (module SyntacticDFA with type x = bool) -> bool
 
 val join : ('x -> 'x -> 'x) 
-        -> (module DFA with type x = 'x)
-        -> (module DFA with type x = 'x)
-        -> (module DFA)
+        -> (module DFA with type s = 's1 and type x = 'x)
+        -> (module DFA with type s = 's2 and type x = 'x)
+        -> (module DFA with type s = 's1 * 's2 and type x = 'x)
  
-val product : (module DFA with type x = bool)
-           -> (module DFA with type x = bool)
-           -> (module DFA)
+val product : (module DFA with type s = 's1 and type x = bool)
+           -> (module DFA with type s = 's2 and type x = bool)
+           -> (module DFA with type s = 's1 * 's2 and type x = bool)
 
 val intersect : (module DFA with type s = 's and type x = bool)
              -> (module DFA with type s = 's and type x = bool)
-             -> (module DFA)
+             -> (module DFA with type s = 's and type x = bool)
 
 module type NFA = sig
   include FA
@@ -74,14 +74,14 @@ end
 val close : (module NFA with type s = 's option and type x = bool) -> (module NFA with type s = 's and type x = bool)
 
 module Label : functor (S : Set.S) -> sig
-  val label : ('s2 -> S.t) -> (module DFA with type s = S.Elt.t) -> (module NFA with type s = 's2)
+  val label : ('s2 -> S.t) -> (module DFA with type s = S.Elt.t and type x = 'x) -> (module NFA with type s = 's2 and type x = 'x)
 end
 
 val nfa_of_dfa : (module DFA) -> (module NFA)
 
 val dfa_of_nfa : (module NFA with type s = 's and type x = bool) -> (module DFA with type s = 's and type x = bool)
 
-val from_netkat_deriv : (module DerivTerm) -> TermSet.t -> (module DFA with type x = bool)
+val from_netkat_deriv : (module DerivTerm) -> TermSet.t -> (module NFA with type s = packet and type x = bool)
 
-val from_spec_deriv : (module SpecDeriv) -> Spec.t -> (module DFA with type x = bool)
+val from_spec_deriv : (module SpecDeriv) -> Spec.t -> (module DFA with type s = Spec.sel and type x = bool)
 
