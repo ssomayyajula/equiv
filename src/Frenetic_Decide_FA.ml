@@ -169,6 +169,23 @@ module Label (S : Set.S) = struct
      end : NFA with type s = s2 and type x = x')
 end
 
+module Expand (S : Set.S) = struct
+  let expand (type x') (module D : DFA with type s = S.t and type x = x') =
+    (module struct
+       type q = D.q with sexp, compare
+       
+       type s = S.Elt.t
+       
+       type x = D.x
+       
+       let q0 = D.q0
+       
+       let delta q = Fn.compose (D.delta q) S.singleton
+       
+       let epsilon = D.epsilon
+     end : DFA with type s = S.Elt.t and type x = D.x)
+end
+
 let close (type s') (module N : NFA with type s = s' option and type x = bool) =
   (module struct
      type q = N.q with sexp, compare

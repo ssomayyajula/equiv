@@ -4,6 +4,7 @@ open Frenetic_Decide_SpecDeriv
 open Frenetic_Decide_Ast
 open Frenetic_Decide_Deriv
 open Frenetic_Decide_FA
+open Frenetic_Decide_Packet_Repr
 
 (*
 f: Sel * Pk -> PacketSet.t option
@@ -23,6 +24,8 @@ module L = Label(SelPkSet)
 
 let inv : PacketSet.t option -> SelPkSet.t = failwith ""
 
+module E = Expand(PacketSet)
+
 let check_satisfaction s t1 t2 =
   (* Build the automata for s, t1, and t2 *)
   let aut_s     = from_spec_deriv (module NaiveDeriv) s in
@@ -37,11 +40,10 @@ let check_satisfaction s t1 t2 =
   let lbl_e1    = L.label inv prod_t1_s in
   let lbl_e2    = L.label inv prod_t2_s in
 
-  (* Get rid of epsilon moves *)
-  let lbl_1 = close lbl_e1 in
-  let lbl_2 = close lbl_e2 in
-
-  (* Get rid of f *)
+  (* Get rid of epsilon moves and expand set transitions to packet transitions *)
+  let lbl_1 = E.expand (dfa_of_nfa (close lbl_e1)) in
+  let lbl_2 = E.expand (dfa_of_nfa (close lbl_e2)) in
+  
   (*
   let sim = intersect (dfa_of_nfa ex_1) (complement (dfa_of_nfa ex_2)) in
   let module A = (val sim : DFA with type s = PacketSet.t option and type x = bool)

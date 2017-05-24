@@ -77,6 +77,10 @@ module Label : functor (S : Set.S) -> sig
   val label : ('s2 -> S.t) -> (module DFA with type s = S.Elt.t and type x = 'x) -> (module NFA with type s = 's2 and type x = 'x)
 end
 
+module Expand : functor (S : Set.S) -> sig
+  val expand : (module DFA with type s = S.t and type x = 'x) -> (module DFA with type s = S.Elt.t and type x = 'x)
+end
+
 val nfa_of_dfa : (module DFA) -> (module NFA)
 
 val dfa_of_nfa : (module NFA with type s = 's and type x = bool) -> (module DFA with type s = 's and type x = bool)

@@ -39,7 +39,7 @@ module FieldSet : sig
 end
 
 module Value : sig
-  type t with sexp
+  type t = int with sexp
   val compare : t -> t -> int
   val hash : t -> int
   val as_int : t -> int
