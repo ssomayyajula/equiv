@@ -1,27 +1,30 @@
-open Core.Std
+open Core
 open Frenetic_Decide_Ast
 open Frenetic_Decide_Util
 
 type 'domain_witness hyperpoint = int list
 type 'domain_witness codepoint = int
 type 'domain_witness index = { i : int }
+type 'domain_witness index0 = { i : int }
 
-(* Compatibilities... *)
-type pk     = packet
-type domain = packet
-type value  = Value.t
-type field  = Field.t
+module type Domain = sig
+  val domain : ValueSet.t FieldMap.t
+end
+
+type pk = packet
 
 module Packet = struct
+  type field = Field.t
+  
+  type value = Value.t
+
+  open Core.Std
+  
   let test (f : field) (v : value) (pk : pk) : bool =
     Option.value_map (Map.find pk f) ~f:(Value.equal v) ~default:false
 
   let modify (f : field) (v : value) (pk : pk) : pk =
-    Map.add pk ~key:f ~data:v
-end
-
-module type Domain = sig 
-  val domain : domain
+    Map.add pk ~key:f ~data:v  
 end
 
 module type S = sig
@@ -54,6 +57,8 @@ module type S = sig
     val of_pk : pk -> t
     val to_index : t -> Index.t
     val of_index : Index.t -> t
+    val to_index0 : t -> Index0.t
+    val of_index0 : Index0.t -> t
   end
 
   (** Encoding of packets as strictly positive integers, i.e. matrix indices. *)
@@ -67,12 +72,24 @@ module type S = sig
     val test' : Field.t -> Value.t -> int -> bool
     val modify' : Field.t -> Value.t -> int -> int
   end
+
+  (** Encoding of packets as positive integers (including 0), i.e. matrix indices. *)
+  and Index0 : sig
+    type t = domain_witness index0
+    val max : t
+    val of_pk : pk -> t
+    val to_pk : t -> pk
+    val test : Field.t -> Value.t -> t -> bool
+    val modify : Field.t -> Value.t -> t -> t
+    val test' : Field.t -> Value.t -> int -> bool
+    val modify' : Field.t -> Value.t -> int -> int
+  end
 end
 
 module Make(D : Domain) : S = struct
 
   let domain : (Field.t * Value.t list) list =
-    Map.to_alist (Map.map D.domain ~f:(fun v -> [v]))
+    Core.Std.Map.to_alist (Core.Std.Map.map D.domain ~f:ValueSet.elements)
 
   type domain_witness
 
@@ -80,21 +97,22 @@ module Make(D : Domain) : S = struct
     type t = domain_witness hyperpoint
 
     let dimension =
-      List.map domain ~f:(fun (_,vs) -> List.length vs + 1)
+      Core.Std.List.map domain ~f:(fun (_,vs) -> List.length vs + 1)
 
     let injection : (Field.t * (Value.t option -> int)) list =
-      List.Assoc.map domain ~f:(fun vs ->
-        List.mapi vs ~f:(fun i v -> (v, i+1))
-        |> Int.Map.of_alist_exn
+      Core.Std.List.Assoc.map domain ~f:(fun vs ->
+        Core.Std.List.mapi vs ~f:(fun i v -> (v, i+1))
+        |> Core.Std.Int.Map.of_alist_exn
         |> (fun m -> function
             | None -> 0
-            | Some v -> Option.value (Map.find m v) ~default:0))
+            | Some v -> Core.Std.Option.value (Core.Std.Map.find m v) ~default:0))
 
     let ejection : (Field.t * (int -> Value.t option)) list =
-      List.Assoc.map domain ~f:List.to_array
-      |> List.Assoc.map ~f:(fun inj v -> if v = 0 then None else Some inj.(v-1))
+      Core.Std.List.Assoc.map domain ~f:Core.Std.List.to_array
+      |> Core.Std.List.Assoc.map ~f:(fun inj v -> if v = 0 then None else Some inj.(v-1))
 
-
+    open Core.Std
+    
     let to_codepoint t =
       List.fold2_exn t dimension ~init:0 ~f:(fun cp v n -> v + n * cp)
 
@@ -120,9 +138,11 @@ module Make(D : Domain) : S = struct
     let of_hyperpoint = Hyperpoint.to_codepoint
     let to_pk = Fn.compose Hyperpoint.to_pk to_hyperpoint
     let of_pk = Fn.compose of_hyperpoint Hyperpoint.of_pk
-    let max = (List.fold ~init:1 ~f:( * ) Hyperpoint.dimension) - 1
-    let to_index cp = { i = cp + 1 }
-    let of_index idx = idx.i - 1
+    let max = (Core.Std.List.fold ~init:1 ~f:( * ) Hyperpoint.dimension) - 1
+    let to_index cp : domain_witness index = { i = cp + 1  }
+    let of_index (idx : domain_witness index) = idx.i - 1
+    let to_index0 cp : domain_witness index0 = { i = cp }
+    let of_index0 (idx : domain_witness index0) = idx.i 
   end
 
   module Index = struct
@@ -136,5 +156,15 @@ module Make(D : Domain) : S = struct
     let modify' f n i = (modify f n { i = i }).i
   end
 
-end
+  module Index0 = struct
+    type t = domain_witness index0
+    let of_pk = Fn.compose Codepoint.to_index0 Codepoint.of_pk
+    let to_pk = Fn.compose Codepoint.to_pk Codepoint.of_index0
+    let max = Codepoint.(to_index0 max)
+    let test f n t = Packet.test f n (to_pk t)
+    let modify f n t = of_pk (Packet.modify f n (to_pk t))
+    let test' f n i = test f n { i = i }
+    let modify' f n i = (modify f n { i = i }).i
+  end
 
+end

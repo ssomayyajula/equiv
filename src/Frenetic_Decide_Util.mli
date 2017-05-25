@@ -67,6 +67,7 @@ module SetMapF :
     type key = K.t
     val empty : t
     val add : key -> elt -> t -> t
+    val fold : (key -> elt -> 'b -> 'b) -> t -> 'b -> 'b
     val is_empty : t -> bool
     val union : t -> t -> t
     val keys : t -> key list
