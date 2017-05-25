@@ -9,11 +9,13 @@ end
 
 module type ENUM = sig 
   type t
+  module S : Set.S with type Elt.t = t
   val min : t 
   val max : t 
   val succ : t -> t
   val pred : t -> t
   val forall : (t -> bool) -> bool
+  val elements : S.t
 end
 
 let domain t =
@@ -35,15 +37,19 @@ module PacketEnum (P : Policy) = struct
 
     (*UnivMap.fold (fun k v m -> FieldMap.add m ~key:k ~data:v) (Term.values t) FieldMap.empty*)
   
-  module S = Make(struct
+  module D = Make(struct
     let domain = domain P.term
   end)
   
-  open S.Index0
+  module S = Set.Make (struct
+    type t = packet with sexp, compare
+  end)
+  
+  open D.Index0
   
   let min = to_pk {i = 0}
   
-  let max = to_pk S.Index0.max
+  let max = to_pk D.Index0.max
   
   let succ pk = to_pk {i = (of_pk pk).i + 1}
   
@@ -52,5 +58,9 @@ module PacketEnum (P : Policy) = struct
   let forall f =
     let rec helper t = f t && (if t = max then true else helper (succ t)) in
     helper min
+  
+  let elements =
+    let rec helper s t = if t = max then S.add s t else helper (S.add s t) (succ t) in
+    helper S.empty min
 end
 
