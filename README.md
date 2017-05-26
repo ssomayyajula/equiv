@@ -2,7 +2,7 @@
 
 This repository contains a very limited prototype implementation of the decision procedure described in this [report](https://www.dropbox.com/s/phkbrfendpa2e6w/cs4999_report1.pdf?dl=0) ([this](https://www.dropbox.com/s/uiov8ajz7suth7d/cs4999_report2.pdf?dl=0) elaborates more on the algorithm).
 
-Here's a short summary: while we already have a decision procedure for the equivalence of NetKAT expressions, this project aims to 
+Here's a short summary: while we already have a decision procedure for the equivalence of NetKAT expressions, this project aims to decide whether a NetKAT term behaves like another NetKAT term when only certain behaviors are observed. That is, only require certain fields of packets to be preserved or be ignored altogether. Such specifications are given as regular expressions of _selectors_ that select certain fields of packets. Then, the regularity of NetKAT terms and specifications is exploited to decide whether they are equivalent.
 
 To build, clone the repository and run `make` (OASIS should do most of the work). To run, do `./main.byte`. The main program runs a satisfaction check on three sample specifications and associated NetKAT programs. Here's a breakdown of the modules:
 
