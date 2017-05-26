@@ -17,7 +17,7 @@ module type ENUM = sig
   val succ : t -> t
   val pred : t -> t
   val forall : (t -> bool) -> bool
-  val elements : S.t
+  val elements : unit -> S.t
 end
 
 val domain : Term.t -> ValueSet.t FieldMap.t

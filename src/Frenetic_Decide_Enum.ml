@@ -15,7 +15,7 @@ module type ENUM = sig
   val succ : t -> t
   val pred : t -> t
   val forall : (t -> bool) -> bool
-  val elements : S.t
+  val elements : unit -> S.t
 end
 
 let domain t =
@@ -56,11 +56,11 @@ module PacketEnum (P : Policy) = struct
   let pred pk = to_pk {i = (of_pk pk).i - 1}
   
   let forall f =
-    let rec helper t = f t && (if t = max then true else helper (succ t)) in
+    let rec helper t = f t && (if of_pk t = of_pk max then true else helper (succ t)) in
     helper min
   
-  let elements =
-    let rec helper s t = if t = max then S.add s t else helper (S.add s t) (succ t) in
+  let elements () =
+    let rec helper s t = if of_pk t = of_pk max then S.add s t else helper (S.add s t) (succ t) in
     helper S.empty min
 end
 
