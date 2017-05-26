@@ -1,6 +1,6 @@
 # equiv
 
-This repository contains a very limited prototype implementation of the decision procedure described in this [report]().
+This repository contains a very limited prototype implementation of the decision procedure described in this [report](https://www.dropbox.com/s/phkbrfendpa2e6w/cs4999_report1.pdf?dl=0) ([this](https://www.dropbox.com/s/uiov8ajz7suth7d/cs4999_report2.pdf?dl=0) elaborates more on the algorithm).
 
 Here's a short summary: while we already have a decision procedure for the equivalence of NetKAT expressions, this project aims to 
 
@@ -22,7 +22,7 @@ Here are my original contributions:
 * `Frenetic_Decide_Enum` -- a wrapper around `Frenetic_Decide_Packet_Repr` to lazily generate entire alphabets of packet for NetKAT automata
 * `main` -- the main program. Contains the following functions:
   - `simulates`, which computes whether one DFA simulates another using the standard worklist/relation algorithm. However, it brute forces the computation of their alphabets, which we discuss below.
-  - `check_satisfaction`, which computes whether one NetKAT term is equivalent to another up-to a specification. The algorithm is described [here]().
+  - `check_satisfaction`, which computes whether one NetKAT term is equivalent to another up-to a specification. The algorithm is described [here](https://www.dropbox.com/s/s8eq5fdk6jgy69v/automata-relabeling-satisfaction.pdf?dl=0).
 
 Nomenclature: a false positive is when the program says a NetKAT term `t2` is equivalent to `t1` up-to specification `s` when in fact they aren't, and vice versa for false negatives.
 
