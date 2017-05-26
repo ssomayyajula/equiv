@@ -18,7 +18,7 @@ Here are my original contributions:
 * `Frenetic_Decide_Predicate` -- structures representing NetKAT predicates
 * `Frenetic_Decide_Spec` -- represents specifications as regular expressions
 * `Frenetic_Decide_SpecDeriv` -- Brzozowski derivatives of specifications
-* `Frenteic_Decide_FA` -- a mini library for finite automata construction and manipulation. This is used to get a uniform representation of NetKAT term/specification automata from derivatives for labelling and expansion
+* `Frenetic_Decide_FA` -- a mini library for finite automata construction and manipulation. This is used to get a uniform representation of NetKAT term/specification automata from derivatives for labelling and expansion
 * `Frenetic_Decide_Enum` -- a wrapper around `Frenetic_Decide_Packet_Repr` to lazily generate entire alphabets of packet for NetKAT automata
 * `main` -- the main program. Contains the following functions:
   - `simulates`, which computes whether one DFA simulates another using the standard worklist/relation algorithm. However, it brute forces the computation of their alphabets, which we discuss below.

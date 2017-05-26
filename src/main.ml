@@ -63,8 +63,8 @@ let simulates (type s')
     (not (D1.epsilon q1) || D2.epsilon q2) ||
     (* forall s in Sigma, helper (delta1 (q1, s)) (delta2 (q2, s)) *)
     (r := R.add (!r) (q1, q2);
-     E.forall (fun s -> sim (D1.delta q1 s) (D2.delta q2 s) r)) in
-  *)
+     E.forall (fun s -> sim (D1.delta q1 s) (D2.delta q2 s) r)) in*)
+  
   let r        = ref R.empty in
   
   let alphabet = E.elements () in
@@ -78,19 +78,16 @@ let simulates (type s')
   end) in
 
   let rec main_loop wl =
-    if WorkList.is_empty wl then true
-    else
-      let (q1, q2) = WorkList.hd wl in
-      if (not (D1.epsilon q1) || D2.epsilon q2) then false
-      else
-        let rest = WorkList.tl wl in
+    WorkList.is_empty wl ||
+    (let (q1, q2) = WorkList.hd wl in
+      (not (D1.epsilon q1) || D2.epsilon q2) &&
+        (let rest = WorkList.tl wl in
         if R.mem (!r) (q1, q2) then main_loop rest
         else begin
           r := R.add (!r) (q1, q2);
           main_loop (E.S.fold alphabet ~init:rest ~f:(fun acc s -> WorkList.add (D1.delta q1 s, D2.delta q2 s) acc))
-        end in
+        end)) in
   main_loop (WorkList.singleton (D1.q0, D2.q0))
-  (*sim D1.q0 D2.q0 (ref R.empty)*)
 
 let check_satisfaction s t1 t2 =
   (* Build the automata for s, t1, and t2 *)
@@ -108,7 +105,7 @@ let check_satisfaction s t1 t2 =
   let inv : PacketSet.t option -> PkSelSet.t =
     let open Spec in
     function
-    | None -> (*PkSelSet.empty*) PkSelSet.map (P.elements ()) ~f:(fun pk -> (pk, Tau))
+    | None -> PkSelSet.map (P.elements ()) ~f:(fun pk -> (pk, Tau))
     | Some pks -> let fields = common_fields pks in
                   let t = Term.times (FieldMap.fold fields ~init:[] ~f:(fun ~key:f ~data:v acc -> Term.assg f v :: acc)) in
                   let module PP = PacketEnum (struct let term = t end) in
@@ -125,15 +122,36 @@ let check_satisfaction s t1 t2 =
   let lbl_e1 = E.expand (dfa_of_nfa (close lbl_1)) in
   let lbl_e2 = E.expand (dfa_of_nfa (close lbl_2)) in
   print_string "Computing simulation...\n";
+  flush_all ();
   simulates (module P) lbl_e2 lbl_e1
 
-let main = Printf.printf "Answer: %b\n"
-  (let sw = Field.of_string "sw" in
-   let pt = Field.of_string "pt" in
-   let open Spec in
-   let open Term in
-   (check_satisfaction
-      (Spec.plus (SpecSet.of_list [(alpha (FS.singleton sw)); (alpha (FS.singleton pt))]))
-      (assg sw 1)
-      (assg sw 2)))
 
+let sw = Field.of_string "sw"
+let pt = Field.of_string "pt"
+
+open Spec
+open Term
+
+let prog s t1 t2 = Printf.printf "Answer: %b\n" (check_satisfaction s t1 t2)
+
+let main =
+  (* Should be true *)
+  prog (alpha (FS.singleton sw))
+    (assg pt 1)
+    (Term.times [assg pt 1; assg sw 2321]);
+  (* Should be true *)
+  prog (Spec.plus (SpecSet.of_list [alpha FS.empty; tau]))
+    one
+    zero;
+  (* Should be false *)
+  prog (alpha (FS.of_list [sw; pt]))
+    one
+    zero
+  (*prog (Spec.star tau)
+    (assg sw 1)
+    (assg sw 2);
+  (* I/O equivalence *)
+  prog (Spec.times [alpha (FS.of_list [sw; pt]); Spec.times [Spec.star tau; alpha (FS.of_list [sw; pt])]])
+    (Term.one)
+    (test sw 1)*)
+  (*let x = (NaiveDeriv.D.run (NaiveDeriv.get_d (NaiveDeriv.make (Spec.star tau))) Spec.Tau).Hashcons.node in ()*)

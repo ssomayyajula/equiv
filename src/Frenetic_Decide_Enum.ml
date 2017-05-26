@@ -17,7 +17,16 @@ module type ENUM = sig
   val forall : (t -> bool) -> bool
   val elements : unit -> S.t
 end
-
+(*
+module SetEnum (E : ENUM) = struct
+  module S = Set.Make (struct
+    type t = E.t with sexp, compare
+  end)
+  
+  let min = S.empty
+  let max = 
+end
+*)
 let domain t =
     let rec domain t d = 
       let open Term in

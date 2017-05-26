@@ -74,8 +74,8 @@ module NaiveDeriv = struct
       match t.Hashcons.node with
         (Zero | Sel  _) -> false
       | (One  | Star _) -> true
-      | Plus  es        -> SpecSet.fold es ~init:false ~f:(fun acc e -> acc || make e)
-      | Times es        -> List.fold_left es ~init:true  ~f:(fun acc e -> acc && make e)
+      | Plus  es        -> SpecSet.exists es ~f:make
+      | Times es        -> List.for_all es ~f:make
   end
   
   module D = struct
@@ -89,10 +89,12 @@ module NaiveDeriv = struct
       match t.Hashcons.node with
         (Zero | One)   -> zero
       | Sel s'         -> spec_of_bool (Spec.sel_equal s s')
-      | Plus es        -> plus (SpecSet.map es ~f:(fun e -> make e s))
-      | (Times [_] | Times []) -> failwith "Invalid times"
-      | Times [e1; e2] -> plus (SpecSet.of_list [times [make e1 s; e2]; times [spec_of_bool (E.make e1); make e2 s]])
-      | Times (h :: t) -> make (times [h; times t]) s
+      | Plus es        -> plus (SpecSet.map es ~f:(Fn.flip make s))
+      | Times []       -> failwith "NaiveDeriv empty times"
+      | Times [e]      -> make e s
+      | Times [e1; e2] ->
+          plus (SpecSet.of_list [times [make e1 s; e2]; times [spec_of_bool (E.make e1); make e2 s]])
+      | Times (h :: t) -> make (List.fold_left t ~init:h ~f:(fun acc e -> times [acc; e])) s (*make (times [h; times t]) s *)
       | Star e         -> times [make e s; t]
   end
 

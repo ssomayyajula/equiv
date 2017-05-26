@@ -19,7 +19,12 @@ module type ENUM = sig
   val forall : (t -> bool) -> bool
   val elements : unit -> S.t
 end
-
+(*
+module SetEnum : functor (E : ENUM) -> sig
+  module S : Set.S with type Elt.t = E.t
+  include ENUM with type t = S.t
+end
+*)
 val domain : Term.t -> ValueSet.t FieldMap.t
 
 (* Packets are injective into strictly positive integers *)
